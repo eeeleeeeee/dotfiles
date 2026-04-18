@@ -6,7 +6,7 @@ dot_claude/settings.linux.json
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
-Documents/**
+Documents/WindowsPowerShell/**
 dot_claude/settings.windows.json
 {{ end }}
 
