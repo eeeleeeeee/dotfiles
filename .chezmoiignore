@@ -11,5 +11,6 @@ bin
 .claude/settings.windows.json
 {{ end }}
 
-# Never deploy docs folder
+# Never deploy repo meta files
+README.md
 docs/**
