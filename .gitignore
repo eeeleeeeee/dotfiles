@@ -8,5 +8,9 @@ Thumbs.db
 *.key
 *_token
 
-# chezmoi cache
+# chezmoi cache and auto-generated files
 .chezmoistate.boltdb
+bin/
+
+# Claude Code project-level settings (auto-generated)
+.claude/

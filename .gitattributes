@@ -1,0 +1,3 @@
+# Force LF for chezmoi template files to prevent CRLF breaking template parsing
+.chezmoiignore text eol=lf
+*.tmpl text eol=lf
