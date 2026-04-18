@@ -1,13 +1,13 @@
 {{ if ne .chezmoi.os "linux" }}
-dot_vimrc
-dot_bashrc
-dot_zshrc
-dot_claude/settings.linux.json
+.vimrc
+.bashrc
+.zshrc
+.claude/settings.linux.json
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
 Documents/WindowsPowerShell/**
-dot_claude/settings.windows.json
+.claude/settings.windows.json
 {{ end }}
 
 # Never deploy docs folder
