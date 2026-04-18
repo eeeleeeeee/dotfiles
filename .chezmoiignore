@@ -1,0 +1,14 @@
+{{ if ne .chezmoi.os "linux" }}
+dot_vimrc
+dot_bashrc
+dot_zshrc
+dot_claude/settings.linux.json
+{{ end }}
+
+{{ if ne .chezmoi.os "windows" }}
+Documents/**
+dot_claude/settings.windows.json
+{{ end }}
+
+# Never deploy docs folder
+docs/**
