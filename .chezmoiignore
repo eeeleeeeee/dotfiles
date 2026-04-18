@@ -6,7 +6,8 @@
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
-Documents/WindowsPowerShell/**
+Documents
+bin
 .claude/settings.windows.json
 {{ end }}
 
