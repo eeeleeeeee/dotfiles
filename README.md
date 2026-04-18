@@ -17,10 +17,35 @@
 
 ## 初始設定（Setup）
 
-### 前置條件
+### 安裝 chezmoi
 
-- 目標機器已安裝 [chezmoi](https://www.chezmoi.io/install/)
-- 已將此儲存庫複製（clone）到偏好的路徑
+**Windows（PowerShell）：**
+```powershell
+winget install twpayne.chezmoi
+```
+
+**Linux/WSL：**
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
+```
+
+安裝後確認 chezmoi 可以執行：
+```bash
+chezmoi --version
+```
+
+> Linux 若出現「找不到指令」，將 `~/.local/bin` 加入 PATH：
+> ```bash
+> echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+> ```
+
+### 複製儲存庫（Clone）
+
+```bash
+git clone https://github.com/eeeleeeeee/dotfiles.git ~/dotfiles
+```
+
+將路徑替換為你偏好的位置。
 
 ### 設定 chezmoi 來源目錄（source directory）
 
