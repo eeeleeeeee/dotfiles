@@ -61,14 +61,19 @@ git clone https://github.com/eeeleeeeee/dotfiles.git ~/dotfiles
 
 ### 設定 chezmoi 來源目錄（source directory）
 
-> **重要：** Windows 上所有 chezmoi 指令都必須在 **PowerShell** 執行，不可在 Git Bash 或 WSL 中執行，否則 config 會寫入錯誤路徑。
-
 **Windows（PowerShell）：**
+
+手動建立 config 檔（`chezmoi init` 在 Windows 上會寫入錯誤路徑，直接建立最可靠）：
+
 ```powershell
-chezmoi init --source "C:\path\to\dotfiles"
+New-Item -ItemType Directory -Force "$env:APPDATA\chezmoi"
+[System.IO.File]::WriteAllText(
+    "$env:APPDATA\chezmoi\chezmoi.toml",
+    "sourceDir = `"$(($pwd.Path) -replace '\\', '/')`"`n"
+)
 ```
 
-chezmoi 會自動建立 `%APPDATA%\chezmoi\chezmoi.toml`，指向你的儲存庫。
+> 請確認執行此指令時，目前目錄（`pwd`）是 dotfiles repo 的根目錄。
 
 **Linux/WSL：**
 ```bash
