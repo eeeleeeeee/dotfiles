@@ -27,9 +27,9 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 ```
 
-再安裝 chezmoi：
+再安裝 Git 與 chezmoi：
 ```powershell
-scoop install chezmoi
+scoop install git chezmoi
 ```
 
 **Linux/WSL：**
