@@ -61,19 +61,12 @@ git clone https://github.com/eeeleeeeee/dotfiles.git ~/dotfiles
 
 ### 設定 chezmoi 來源目錄（source directory）
 
+在 repo 根目錄執行：
+
 **Windows（PowerShell）：**
-
-手動建立 config 檔（`chezmoi init` 在 Windows 上會寫入錯誤路徑，直接建立最可靠）：
-
 ```powershell
-New-Item -ItemType Directory -Force "$env:APPDATA\chezmoi"
-[System.IO.File]::WriteAllText(
-    "$env:APPDATA\chezmoi\chezmoi.toml",
-    "sourceDir = `"$(($pwd.Path) -replace '\\', '/')`"`n"
-)
+chezmoi init --source "C:\path\to\dotfiles"
 ```
-
-> 請確認執行此指令時，目前目錄（`pwd`）是 dotfiles repo 的根目錄。
 
 **Linux/WSL：**
 ```bash
