@@ -1,1 +1,19 @@
+{{- $isWSL := and (eq .chezmoi.os "linux") (contains "microsoft" (output "uname" "-r" | lower)) -}}
+
 sourceDir = {{ .chezmoi.sourceDir | quote }}
+
+[data]
+    isWSL = {{ $isWSL }}
+
+# 抑制 template 變更警告，config 已手動維護不需重新產生
+[warnings]
+    configFileTemplateHasChanged = false
+
+{{- if eq .chezmoi.os "windows" }}
+# 必須用 bin/bash.exe（Git Bash wrapper），原因：
+# - System32/bash.exe 是 WSL bash，無法處理 Windows 暫存檔路徑
+# - usr/bin/bash.exe 直接呼叫時 MSYSTEM 未設，coreutils DLL 載入失敗
+# 前提：git 透過 scoop 安裝
+[interpreters.sh]
+    command = {{ joinPath .chezmoi.homeDir "scoop/apps/git/current/bin/bash.exe" | quote }}
+{{- end }}
