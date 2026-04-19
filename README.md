@@ -122,10 +122,23 @@ git push
 ### 其他常用指令
 
 ```bash
-chezmoi diff               # 預覽所有待套用的變更
-chezmoi diff ~/.bashrc     # 預覽特定檔案的變更
-chezmoi apply              # 套用所有變更
-chezmoi apply ~/.bashrc    # 套用特定檔案
-chezmoi managed            # 列出所有受管理的檔案
-chezmoi ignored            # 列出被 .chezmoiignore 排除的檔案
+chezmoi diff                        # 預覽所有待套用的變更
+chezmoi diff ~/.bashrc              # 預覽特定檔案的變更
+chezmoi apply                       # 套用所有變更
+chezmoi apply ~/.bashrc             # 套用特定檔案
+chezmoi managed                     # 列出所有受管理的檔案
+chezmoi ignored                     # 列出被 .chezmoiignore 排除的檔案
+chezmoi forget ~/.bashrc            # 停止追蹤某個檔案（不會刪除實際檔案）
+chezmoi cd                          # 跳到 source directory
+chezmoi archive --output=backup.tar.gz  # 備份所有 managed 檔案
 ```
+
+### 檔名前綴（權限控制）
+
+| 前綴 | 效果 | 適用情境 |
+|------|------|----------|
+| `private_` | chmod 600 | 含敏感資料的設定檔 |
+| `executable_` | chmod 700 | 可執行腳本 |
+| `readonly_` | chmod 400 | 不希望被意外修改的檔案 |
+
+範例：`private_dot_ssh/config` → `~/.ssh/config`（權限 600）
