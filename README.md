@@ -20,8 +20,16 @@
 ### 安裝 chezmoi
 
 **Windows（PowerShell）：**
+
+先安裝 [Scoop](https://scoop.sh/)（若尚未安裝）：
 ```powershell
-winget install twpayne.chezmoi
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+```
+
+再安裝 chezmoi：
+```powershell
+scoop install chezmoi
 ```
 
 **Linux/WSL：**
@@ -30,7 +38,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
 ```
 
 安裝後確認 chezmoi 可以執行：
-```bash
+```powershell
 chezmoi --version
 ```
 
@@ -41,29 +49,35 @@ chezmoi --version
 
 ### 複製儲存庫（Clone）
 
-```bash
-git clone https://github.com/eeeleeeeee/dotfiles.git ~/dotfiles
-```
-
-將路徑替換為你偏好的位置。
-
-### 設定 chezmoi 來源目錄（source directory）
-
 **Windows（PowerShell）：**
 ```powershell
-chezmoi init --source "D:/你的路徑/dotfiles"
+git clone https://github.com/eeeleeeeee/dotfiles.git C:\path\to\dotfiles
 ```
 
 **Linux/WSL：**
 ```bash
-chezmoi init --source ~/你的路徑/dotfiles
+git clone https://github.com/eeeleeeeee/dotfiles.git ~/dotfiles
 ```
 
-chezmoi 會自動建立 `~/.config/chezmoi/chezmoi.toml`，指向你的儲存庫。
+### 設定 chezmoi 來源目錄（source directory）
+
+> **重要：** Windows 上所有 chezmoi 指令都必須在 **PowerShell** 執行，不可在 Git Bash 或 WSL 中執行，否則 config 會寫入錯誤路徑。
+
+**Windows（PowerShell）：**
+```powershell
+chezmoi init --source "C:\path\to\dotfiles"
+```
+
+chezmoi 會自動建立 `%APPDATA%\chezmoi\chezmoi.toml`，指向你的儲存庫。
+
+**Linux/WSL：**
+```bash
+chezmoi init --source ~/dotfiles
+```
 
 ### 部署（Apply）
 
-```bash
+```powershell
 chezmoi diff      # 先預覽變更內容
 chezmoi apply -v  # 套用至家目錄（home directory）
 ```
