@@ -51,7 +51,7 @@ chezmoi --version
 
 **Windows（PowerShell）：**
 ```powershell
-git clone https://github.com/eeeleeeeee/dotfiles.git C:\path\to\dotfiles
+git clone https://github.com/eeeleeeeee/dotfiles.git D:\path\to\dotfiles
 ```
 
 **Linux/WSL：**
@@ -65,7 +65,7 @@ git clone https://github.com/eeeleeeeee/dotfiles.git ~/dotfiles
 
 **Windows（PowerShell）：**
 ```powershell
-chezmoi init --source "C:\path\to\dotfiles"
+chezmoi init --source "D:\path\to\dotfiles"
 ```
 
 **Linux/WSL：**
