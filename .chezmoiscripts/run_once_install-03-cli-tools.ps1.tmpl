@@ -1,0 +1,44 @@
+{{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = "Stop"
+
+Write-Host "=== CLI Tools Setup ===" -ForegroundColor Cyan
+
+# Scoop must be installed before running this script
+if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Write-Host "[scoop] not found. Please install Scoop first: https://scoop.sh" -ForegroundColor Red
+    exit 1
+}
+
+function Install-ScoopPackage {
+    param([string]$Package)
+    if (scoop list $Package 2>$null | Select-String $Package) {
+        Write-Host "[$Package] already installed, skipping." -ForegroundColor Gray
+    } else {
+        Write-Host "[$Package] Installing..." -ForegroundColor Yellow
+        scoop install $Package
+    }
+}
+
+# nexttrace is distributed via the extras bucket
+$buckets = scoop bucket list
+if ($buckets -notcontains "extras") {
+    scoop bucket add extras
+}
+
+# ── Compression & Transfer ────────────────────────────────────────────────
+Install-ScoopPackage "7zip"
+Install-ScoopPackage "curl"
+Install-ScoopPackage "wget"
+
+# ── Shell Enhancement ─────────────────────────────────────────────────────
+Install-ScoopPackage "clink"
+
+# ── Network Diagnostics ───────────────────────────────────────────────────
+Install-ScoopPackage "nexttrace"
+
+# ── Media ─────────────────────────────────────────────────────────────────
+Install-ScoopPackage "ffmpeg"
+Install-ScoopPackage "yt-dlp"
+
+Write-Host "=== CLI tools setup complete. ===" -ForegroundColor Cyan
+{{- end -}}
