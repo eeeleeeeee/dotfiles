@@ -1,8 +1,22 @@
 {{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = "Stop"
+
+Write-Host "=== Dev Tools Setup ===" -ForegroundColor Cyan
+
 # Scoop must be installed before running this script
 if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
-    Write-Error "Scoop is not installed. Please install Scoop first: https://scoop.sh"
+    Write-Host "[scoop] not found. Please install Scoop first: https://scoop.sh" -ForegroundColor Red
     exit 1
+}
+
+function Install-ScoopPackage {
+    param([string]$Package)
+    if (scoop list $Package 2>$null | Select-String $Package) {
+        Write-Host "[$Package] already installed, skipping." -ForegroundColor Gray
+    } else {
+        Write-Host "[$Package] Installing..." -ForegroundColor Yellow
+        scoop install $Package
+    }
 }
 
 # Eclipse Adoptium JDKs and Maven are distributed via the java bucket
@@ -11,35 +25,44 @@ if ($buckets -notcontains "java") {
     scoop bucket add java
 }
 
-$packages = @(
-    # Eclipse Adoptium JDK
-    "temurin8-jdk", "temurin11-jdk", "temurin17-jdk", "temurin21-jdk",
-    # Development tools
-    "nvm", "go", "maven", "starship"
-)
-foreach ($pkg in $packages) {
-    if (scoop list $pkg 2>$null | Select-String $pkg) {
-        Write-Host "$pkg already installed, skipping."
-    } else {
-        Write-Host "Installing $pkg..."
-        scoop install $pkg
-    }
-}
+# ── Eclipse Adoptium JDK ──────────────────────────────────────────────────
+Install-ScoopPackage "temurin8-jdk"
+Install-ScoopPackage "temurin11-jdk"
+Install-ScoopPackage "temurin17-jdk"
+Install-ScoopPackage "temurin21-jdk"
 
-# Install Node.js LTS via nvm instead of scoop for version management
+# ── Development Tools ─────────────────────────────────────────────────────
+Install-ScoopPackage "go"
+Install-ScoopPackage "maven"
+Install-ScoopPackage "starship"
+Install-ScoopPackage "nvm"
+
+# ── Node.js LTS (via nvm for version management) ──────────────────────────
 if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
-    Write-Error "nvm installation failed, skipping Node.js installation."
+    Write-Host "[nvm] installation failed, skipping Node.js installation." -ForegroundColor Red
     exit 1
 }
 
-$nvmList = nvm list 2>$null
-if ($nvmList -match "lts") {
-    Write-Host "Node.js LTS already installed, skipping."
+# Redirect nvm symlink to user directory to avoid UAC prompt
+$nvmSettingsPath = "$env:APPDATA\nvm\settings.txt"
+$userNodePath = "$env:USERPROFILE\nodejs"
+if (Test-Path $nvmSettingsPath) {
+    $settings = Get-Content $nvmSettingsPath
+    if ($settings -match "^path:") {
+        $settings = $settings -replace "^path:.*", "path: $userNodePath"
+    } else {
+        $settings += "path: $userNodePath"
+    }
+    $settings | Set-Content $nvmSettingsPath
+}
+
+if (nvm list 2>$null | Select-String "lts") {
+    Write-Host "[node] LTS already installed, skipping." -ForegroundColor Gray
 } else {
-    Write-Host "Installing Node.js LTS..."
+    Write-Host "[node] Installing LTS..." -ForegroundColor Yellow
     nvm install lts
     nvm use lts
 }
 
-Write-Host "All dev tools installed successfully."
+Write-Host "=== Dev tools setup complete. ===" -ForegroundColor Cyan
 {{- end -}}
