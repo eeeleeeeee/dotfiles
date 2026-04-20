@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# chezmoi modify_ script — patch Claude Code settings.json
+#
+# Strategy: patch stable personal preference fields only.
+# Leave enabledPlugins, extraKnownMarketplaces, model alone
+# (managed by Claude Code runtime).
+
+set -euo pipefail
+
+{{- if eq .chezmoi.os "windows" }}
+# scoop shims are not in PATH when chezmoi runs scripts via Git Bash
+export PATH="$HOME/scoop/shims:$PATH"
+{{- end }}
+
+input="$(cat)"
+[ -z "$input" ] && input='{}'
+
+echo "$input" | jq \
+  --arg statusline_cmd '{{ .chezmoi.homeDir }}/.local/bin/statusline{{ if eq .chezmoi.os "windows" }}.exe{{ end }}' \
+{{- if eq .chezmoi.os "windows" }}
+  --arg git_bash '{{ printf "%s/scoop/apps/git/current/bin/bash.exe" .chezmoi.homeDir | replace "/" "\\" }}' \
+{{- end }}
+  '
+    .autoUpdatesChannel = "latest"
+    | .tui = "fullscreen"
+    | .effortLevel = "medium"
+    | .statusLine = {
+        type: "command",
+        command: $statusline_cmd,
+        padding: 0
+      }
+    | .env = (.env // {})
+    | .env.CLAUDE_CODE_NO_FLICKER = "1"
+{{- if eq .chezmoi.os "windows" }}
+    | .env.CLAUDE_CODE_GIT_BASH_PATH = $git_bash
+{{- else }}
+    | .env |= del(.CLAUDE_CODE_GIT_BASH_PATH)
+{{- end }}
+  ' | tr -d '\r'
