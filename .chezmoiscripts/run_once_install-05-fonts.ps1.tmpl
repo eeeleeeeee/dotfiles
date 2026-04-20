@@ -1,0 +1,39 @@
+{{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = "Stop"
+
+Write-Host "=== Fonts Setup ===" -ForegroundColor Cyan
+
+# Scoop must be installed before running this script
+if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Write-Host "[scoop] not found. Please install Scoop first: https://scoop.sh" -ForegroundColor Red
+    exit 1
+}
+
+function Install-ScoopPackage {
+    param([string]$Package)
+    if (scoop list $Package 2>$null | Select-String $Package) {
+        Write-Host "[$Package] already installed, skipping." -ForegroundColor Gray
+    } else {
+        Write-Host "[$Package] Installing..." -ForegroundColor Yellow
+        scoop install $Package
+    }
+}
+
+$buckets = scoop bucket list
+if ($buckets -notcontains "nerd-fonts") {
+    scoop bucket add nerd-fonts
+}
+
+# ── CaskaydiaCove Nerd Font Mono ──────────────────────────────────────────
+Install-ScoopPackage "cascadiacode-nf-mono"
+
+# ── JetBrains Mono ────────────────────────────────────────────────────────
+Install-ScoopPackage "jetbrains-mono"
+
+# ── Google Noto ───────────────────────────────────────────────────────────
+Install-ScoopPackage "Noto-NF"
+Install-ScoopPackage "Noto-NF-Mono"
+Install-ScoopPackage "Noto-CJK-Mega-OTC"
+
+Write-Host "=== Fonts setup complete. ===" -ForegroundColor Cyan
+{{- end -}}
