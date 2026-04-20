@@ -1,0 +1,29 @@
+{{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = "Stop"
+
+Write-Host "=== Prerequisites Setup ===" -ForegroundColor Cyan
+
+# Scoop must be installed before running this script
+if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Write-Host "[scoop] not found. Please install Scoop first: https://scoop.sh" -ForegroundColor Red
+    exit 1
+}
+
+function Install-ScoopPackage {
+    param([string]$Package)
+    if (scoop list $Package 2>$null | Select-String $Package) {
+        Write-Host "[$Package] already installed, skipping." -ForegroundColor Gray
+    } else {
+        Write-Host "[$Package] Installing..." -ForegroundColor Yellow
+        scoop install $Package
+    }
+}
+
+# ── Prerequisites for later chezmoi scripts ───────────────────────────────
+# jq:       used to patch JSON config files
+# dos2unix: used to fix CRLF line endings in shell scripts
+Install-ScoopPackage "jq"
+Install-ScoopPackage "dos2unix"
+
+Write-Host "=== Prerequisites setup complete. ===" -ForegroundColor Cyan
+{{- end -}}
