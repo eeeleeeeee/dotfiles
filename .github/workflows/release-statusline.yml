@@ -1,0 +1,97 @@
+name: Release statusline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'claude/statusline/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build statusline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            artifact: statusline-linux-amd64
+          - goos: darwin
+            goarch: amd64
+            artifact: statusline-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            artifact: statusline-darwin-arm64
+          - goos: windows
+            goarch: amd64
+            artifact: statusline-windows-amd64.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build
+        working-directory: claude/statusline
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          VERSION=$(date -u +%Y%m%d)
+          go build -trimpath -ldflags="-s -w -X main.Version=${VERSION}" -o ${{ matrix.artifact }} .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: claude/statusline/${{ matrix.artifact }}
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          echo "date=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist/
+
+      - name: Update statusline-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: statusline-latest
+          name: statusline-latest (${{ steps.version.outputs.date }}-${{ steps.version.outputs.short_sha }})
+          body: Auto-built statusline binaries from commit ${{ github.sha }}.
+          prerelease: false
+          files: dist/*
+          fail_on_unmatched_files: true
+
+      - name: Create versioned release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: statusline-v${{ steps.version.outputs.date }}-${{ steps.version.outputs.short_sha }}
+          name: statusline v${{ steps.version.outputs.date }}-${{ steps.version.outputs.short_sha }}
+          body: Built from commit ${{ github.sha }}
+          prerelease: false
+          files: dist/*
+          fail_on_unmatched_files: true
