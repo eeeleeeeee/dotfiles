@@ -1,0 +1,45 @@
+{{- if eq .chezmoi.os "windows" -}}
+# Scoop must be installed before running this script
+if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Write-Error "Scoop is not installed. Please install Scoop first: https://scoop.sh"
+    exit 1
+}
+
+# Eclipse Adoptium JDKs and Maven are distributed via the java bucket
+$buckets = scoop bucket list
+if ($buckets -notcontains "java") {
+    scoop bucket add java
+}
+
+$packages = @(
+    # Eclipse Adoptium JDK
+    "temurin8-jdk", "temurin11-jdk", "temurin17-jdk", "temurin21-jdk",
+    # Development tools
+    "nvm", "go", "maven", "starship"
+)
+foreach ($pkg in $packages) {
+    if (scoop list $pkg 2>$null | Select-String $pkg) {
+        Write-Host "$pkg already installed, skipping."
+    } else {
+        Write-Host "Installing $pkg..."
+        scoop install $pkg
+    }
+}
+
+# Install Node.js LTS via nvm instead of scoop for version management
+if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
+    Write-Error "nvm installation failed, skipping Node.js installation."
+    exit 1
+}
+
+$nvmList = nvm list 2>$null
+if ($nvmList -match "lts") {
+    Write-Host "Node.js LTS already installed, skipping."
+} else {
+    Write-Host "Installing Node.js LTS..."
+    nvm install lts
+    nvm use lts
+}
+
+Write-Host "All dev tools installed successfully."
+{{- end -}}
