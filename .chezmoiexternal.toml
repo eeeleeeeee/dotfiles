@@ -1,0 +1,11 @@
+# statusline binary — built by GitHub Actions when claude/statusline/** changes
+# chezmoi apply downloads the correct platform binary to ~/.local/bin/
+
+{{ $ext := "" -}}
+{{ if eq .chezmoi.os "windows" }}{{ $ext = ".exe" }}{{ end -}}
+
+[".local/bin/statusline{{ $ext }}"]
+    type = "file"
+    executable = true
+    url = "https://github.com/eeeleeeeee/dotfiles/releases/download/statusline-latest/statusline-{{ .chezmoi.os }}-{{ .chezmoi.arch }}{{ $ext }}"
+    refreshPeriod = "1h"
