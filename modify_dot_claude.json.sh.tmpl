@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# chezmoi modify_ script — patch ~/.claude.json MCP servers
+#
+# Strategy: only patch mcpServers. Leave all other Claude Code
+# internal state (numStartups, tipsHistory, etc.) untouched.
+
+set -euo pipefail
+
+{{- if eq .chezmoi.os "windows" }}
+export PATH="$HOME/scoop/shims:$PATH"
+{{- end }}
+
+input="$(cat)"
+[ -z "$input" ] && input='{}'
+
+echo "$input" | jq '
+  .mcpServers = ((.mcpServers // {}) + {
+    "context7": {
+      "command": "{{ if eq .chezmoi.os "windows" }}cmd{{ else }}npx{{ end }}",
+      "args": [{{ if eq .chezmoi.os "windows" }}"/c", "npx", {{ end }}"-y", "@upstash/context7-mcp@2.1.4"]
+    },
+    "memory": {
+      "command": "{{ if eq .chezmoi.os "windows" }}cmd{{ else }}npx{{ end }}",
+      "args": [{{ if eq .chezmoi.os "windows" }}"/c", "npx", {{ end }}"-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+    },
+    "sequential-thinking": {
+      "command": "{{ if eq .chezmoi.os "windows" }}cmd{{ else }}npx{{ end }}",
+      "args": [{{ if eq .chezmoi.os "windows" }}"/c", "npx", {{ end }}"-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+    }
+  })
+' | tr -d '\r'
