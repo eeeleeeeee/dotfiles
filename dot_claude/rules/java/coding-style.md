@@ -4,7 +4,48 @@ paths:
 ---
 # Java Coding Style
 
-> This file extends [common/coding-style.md](../common/coding-style.md) with Java-specific content.
+## Core Principles
+
+### Immutability (CRITICAL)
+
+ALWAYS create new objects, NEVER mutate existing ones:
+- Immutable data prevents hidden side effects, makes debugging easier, and enables safe concurrency
+
+### KISS (Keep It Simple)
+
+- Prefer the simplest solution that actually works
+- Avoid premature optimization
+- Optimize for clarity over cleverness
+
+
+### YAGNI (You Aren't Gonna Need It)
+
+- Do not build features or abstractions before they are needed
+- Start simple, then refactor when the pressure is real
+
+## File Organization
+
+- High cohesion, low coupling
+- 200–400 lines typical, 800 max — extract classes from large files
+- Organize by feature/domain, not by type
+
+## Input Validation
+
+- Validate all user input at system boundaries before processing
+- Use Bean Validation (`@NotNull`, `@NotBlank`, `@Valid`) on controller inputs
+- Fail fast with clear error messages
+- Never trust external data (API responses, user input, file content)
+
+## Code Quality Checklist
+
+Before marking work complete:
+- [ ] Code is readable and well-named
+- [ ] Methods are small and focused
+- [ ] Files are focused (<800 lines)
+- [ ] No deep nesting — prefer early returns
+- [ ] Proper error handling — no silent swallowing
+- [ ] No hardcoded magic numbers
+- [ ] Immutable patterns used
 
 ## Formatting
 
