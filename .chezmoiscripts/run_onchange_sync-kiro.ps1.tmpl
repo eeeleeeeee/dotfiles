@@ -1,0 +1,152 @@
+<#
+Sync trigger — chezmoi re-runs this script when any source file changes.
+{{- range $f := list
+    "dot_claude/rules/java/coding-style.md"
+    "dot_claude/rules/java/patterns.md"
+    "dot_claude/rules/java/security.md"
+    "dot_claude/rules/java/testing.md"
+    "dot_claude/agents/architect.md"
+    "dot_claude/agents/doc-updater.md"
+    "dot_claude/agents/java-build-resolver.md"
+    "dot_claude/agents/java-reviewer.md"
+    "dot_claude/agents/refactor-cleaner.md"
+    "dot_claude/agents/security-reviewer.md"
+    "dot_claude/commands/java/cleanup.md"
+    "dot_claude/commands/java/coding-standards.md"
+    "dot_claude/commands/java/fix-build.md"
+    "dot_claude/commands/java/pre-push.md"
+    "dot_claude/commands/java/review.md" }}
+{{ $f }}: {{ include $f | sha256sum }}
+{{- end }}
+#>
+
+$ErrorActionPreference = 'Stop'
+$kiroDir   = Join-Path $env:USERPROFILE '.kiro'
+$claudeDir = Join-Path $env:USERPROFILE '.claude'
+
+Write-Host '[kiro-sync] Starting sync...' -ForegroundColor Cyan
+
+# ── Tool name mapping: Claude Code → Kiro allowedTools ────────────────────
+$toolMap = @{
+    'Read'      = 'fs_read'
+    'Grep'      = 'fs_read'
+    'Glob'      = 'fs_read'
+    'Write'     = 'fs_write'
+    'Edit'      = 'fs_write'
+    'MultiEdit' = 'fs_write'
+    'Bash'      = 'shell'
+}
+
+# ── Helper: parse YAML frontmatter from a markdown file ───────────────────
+function Get-Frontmatter([string]$content) {
+    if ($content -match '(?s)^---\r?\n(.+?)\r?\n---') {
+        return $matches[1]
+    }
+    return ''
+}
+
+function Get-Body([string]$content) {
+    if ($content -match '(?s)^---\r?\n.+?\r?\n---\r?\n(.*)') {
+        return $matches[1].TrimStart()
+    }
+    return $content
+}
+
+# ── 1. Rules → Kiro Steering ──────────────────────────────────────────────
+$steeringDir = Join-Path $kiroDir 'steering'
+New-Item -ItemType Directory -Force -Path $steeringDir | Out-Null
+
+$ruleFiles = @{
+    'java\coding-style.md' = @{ inclusion = 'fileMatch'; pattern = '*.java';  desc = 'Java coding style: immutability, naming, modern features, Optional, error handling, streams.' }
+    'java\patterns.md'     = @{ inclusion = 'fileMatch'; pattern = '*.java';  desc = 'Java design patterns: repository, service layer, dependency injection.' }
+    'java\security.md'     = @{ inclusion = 'fileMatch'; pattern = '*.java';  desc = 'Java security: SQL injection prevention, secrets management, input validation.' }
+    'java\testing.md'      = @{ inclusion = 'fileMatch'; pattern = '*.java';  desc = 'Java testing standards: JUnit 5, AssertJ, Mockito, Testcontainers.' }
+}
+
+foreach ($rel in $ruleFiles.Keys) {
+    $src  = Join-Path $claudeDir 'rules' $rel
+    $meta = $ruleFiles[$rel]
+    if (-not (Test-Path $src)) { continue }
+
+    $content = Get-Content $src -Raw -Encoding UTF8
+    $body    = Get-Body $content
+
+    $targetName = 'java-' + (Split-Path $rel -Leaf)
+    $target = Join-Path $steeringDir $targetName
+
+    $kiroFrontmatter = @"
+---
+inclusion: $($meta.inclusion)
+fileMatchPattern: "$($meta.pattern)"
+description: $($meta.desc)
+---
+"@
+    Set-Content -Path $target -Value ($kiroFrontmatter + "`n" + $body) -Encoding UTF8
+    Write-Host "  [steering] $targetName" -ForegroundColor Green
+}
+
+# ── 2. Agents → Kiro Agents ───────────────────────────────────────────────
+$kiroAgentsDir = Join-Path $kiroDir 'agents'
+New-Item -ItemType Directory -Force -Path $kiroAgentsDir | Out-Null
+
+Get-ChildItem -Path (Join-Path $claudeDir 'agents') -Filter '*.md' | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw -Encoding UTF8
+    $fm      = Get-Frontmatter $content
+    $body    = Get-Body $content
+
+    # Extract fields
+    $name  = if ($fm -match 'name:\s*(.+)')        { $matches[1].Trim() } else { $_.BaseName }
+    $desc  = if ($fm -match 'description:\s*(.+)') { $matches[1].Trim() } else { '' }
+    $tools = if ($fm -match 'tools:\s*\[([^\]]+)\]') {
+        $matches[1] -split ',' | ForEach-Object { $_.Trim().Trim('"') }
+    } else { @() }
+
+    # Convert tool names
+    $kiroTools = $tools | ForEach-Object { if ($toolMap[$_]) { $toolMap[$_] } } | Select-Object -Unique
+
+    $allowedToolsYaml = if ($kiroTools) {
+        "allowedTools:`n" + ($kiroTools | ForEach-Object { "  - $_" } | Join-String -Separator "`n")
+    } else {
+        'allowedTools: []'
+    }
+
+    $kiroFrontmatter = @"
+---
+name: $name
+description: $desc
+$allowedToolsYaml
+---
+"@
+    $target = Join-Path $kiroAgentsDir $_.Name
+    Set-Content -Path $target -Value ($kiroFrontmatter + "`n" + $body) -Encoding UTF8
+    Write-Host "  [agent]    $($_.Name)" -ForegroundColor Green
+}
+
+# ── 3. Commands → Kiro Skills ─────────────────────────────────────────────
+$skillsDir = Join-Path $kiroDir 'skills'
+New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
+
+Get-ChildItem -Path (Join-Path $claudeDir 'commands' 'java') -Filter '*.md' | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw -Encoding UTF8
+    $fm      = Get-Frontmatter $content
+    $body    = Get-Body $content
+
+    $skillName = 'java-' + $_.BaseName
+    $desc = if ($fm -match 'description:\s*"?([^"\n]+)"?') { $matches[1].Trim() } else { $skillName }
+
+    $skillDir = Join-Path $skillsDir $skillName
+    New-Item -ItemType Directory -Force -Path $skillDir | Out-Null
+
+    $kiroFrontmatter = @"
+---
+name: $skillName
+description: >
+  $desc
+---
+"@
+    $target = Join-Path $skillDir 'SKILL.md'
+    Set-Content -Path $target -Value ($kiroFrontmatter + "`n" + $body) -Encoding UTF8
+    Write-Host "  [skill]    $skillName/SKILL.md" -ForegroundColor Green
+}
+
+Write-Host '[kiro-sync] Done.' -ForegroundColor Cyan
