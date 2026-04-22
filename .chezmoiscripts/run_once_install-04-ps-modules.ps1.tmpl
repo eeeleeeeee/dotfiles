@@ -1,0 +1,30 @@
+{{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = "Stop"
+
+Write-Host "=== PowerShell Modules Setup ===" -ForegroundColor Cyan
+
+function Install-PSModule {
+    param(
+        [string]$Name,
+        [string]$Url,
+        [string]$PsdCheck
+    )
+    $modulePath = "$env:USERPROFILE\Documents\PowerShell\Modules\$Name"
+    if (Test-Path "$modulePath\$PsdCheck") {
+        Write-Host "[$Name] already installed, skipping." -ForegroundColor Gray
+        return
+    }
+    Write-Host "[$Name] Installing..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Force -Path $modulePath | Out-Null
+    $zip = "$env:TEMP\$Name.zip"
+    Invoke-WebRequest -Uri $Url -OutFile $zip
+    Expand-Archive -Path $zip -DestinationPath $modulePath -Force
+    Remove-Item $zip
+    Write-Host "[$Name] Done." -ForegroundColor Green
+}
+
+# ── Notifications ─────────────────────────────────────────────────────────
+Install-PSModule -Name "BurntToast" -Url "https://github.com/Windos/BurntToast/releases/download/v0.8.5/BurntToast.zip" -PsdCheck "BurntToast.psd1"
+
+Write-Host "=== PowerShell modules setup complete. ===" -ForegroundColor Cyan
+{{- end -}}
