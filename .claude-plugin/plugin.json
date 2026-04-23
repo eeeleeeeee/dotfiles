@@ -1,0 +1,11 @@
+{
+  "name": "eugene-dotfiles",
+  "version": "1.0.0",
+  "description": "Java, Git, Code Review slash commands and agents for Claude Code",
+  "author": {
+    "name": "eugene.zheng"
+  },
+  "repository": "https://github.com/eeeleeeeee/dotfiles",
+  "license": "MIT",
+  "commands": ["./dot_claude/commands/"]
+}

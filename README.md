@@ -142,3 +142,14 @@ chezmoi archive --output=backup.tar.gz  # 備份所有 managed 檔案
 | `readonly_` | chmod 400 | 不希望被意外修改的檔案 |
 
 範例：`private_dot_ssh/config` → `~/.ssh/config`（權限 600）
+
+---
+
+## Claude Code Plugin 安裝
+
+```
+/plugin marketplace add https://github.com/eeeleeeeee/dotfiles
+/plugin install eugene-dotfiles@eugene-dotfiles
+```
+
+安裝後會部署 `commands/` 下的所有 slash commands 與 `agents/` 下的所有 agents。

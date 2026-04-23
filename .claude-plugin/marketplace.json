@@ -1,0 +1,19 @@
+{
+  "name": "eugene-dotfiles",
+  "owner": {
+    "name": "eugene.zheng",
+    "email": "561906miru@gmail.com"
+  },
+  "metadata": {
+    "description": "Java, Git, Code Review slash commands and agents for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "eugene-dotfiles",
+      "source": "./",
+      "version": "1.0.0",
+      "category": "workflow",
+      "repository": "https://github.com/eeeleeeeee/dotfiles"
+    }
+  ]
+}
