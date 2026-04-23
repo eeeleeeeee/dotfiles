@@ -13,7 +13,7 @@ export PATH="$HOME/scoop/shims:$PATH"
 input="$(cat)"
 [ -z "$input" ] && input='{}'
 
-echo "$input" | jq '
+output=$(echo "$input" | jq '
   .mcpServers = ((.mcpServers // {}) + {
     "context7": {
       "command": "{{ if eq .chezmoi.os "windows" }}cmd{{ else }}npx{{ end }}",
@@ -28,4 +28,5 @@ echo "$input" | jq '
       "args": [{{ if eq .chezmoi.os "windows" }}"/c", "npx", {{ end }}"-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
     }
   })
-' | tr -d '\r'
+' | tr -d '\r')
+printf '%s' "$output"
