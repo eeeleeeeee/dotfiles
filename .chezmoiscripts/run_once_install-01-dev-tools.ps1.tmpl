@@ -44,21 +44,36 @@ if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Redirect nvm symlink to user directory to avoid UAC prompt
-$nvmSettingsPath = "$env:APPDATA\nvm\settings.txt"
-$userNodePath = "$env:USERPROFILE\nodejs"
+# scoop installs nvm with settings.txt at its app directory
+# The PATH entry added by scoop is: ...\nodejs\nodejs
+# nvm needs a "path:" setting pointing to that symlink location so "nvm use" works without UAC
+$nvmSettingsPath = (Get-Command nvm).Source | Split-Path | Join-Path -ChildPath "settings.txt"
+$nvmRoot = $null
+if (Test-Path $nvmSettingsPath) {
+    $rootLine = Get-Content $nvmSettingsPath | Where-Object { $_ -match "^root:" } | Select-Object -First 1
+    if ($rootLine) { $nvmRoot = ($rootLine -replace "^root:\s*", "").Trim() }
+}
+if (-not $nvmRoot) { $nvmRoot = "$env:USERPROFILE\scoop\persist\nvm\nodejs" }
+$nvmSymlinkPath = Join-Path $nvmRoot "nodejs"
+
 if (Test-Path $nvmSettingsPath) {
     $settings = Get-Content $nvmSettingsPath
     if ($settings -match "^path:") {
-        $settings = $settings -replace "^path:.*", "path: $userNodePath"
+        $settings = $settings -replace "^path:.*", "path: $nvmSymlinkPath"
     } else {
-        $settings += "path: $userNodePath"
+        $settings += "path: $nvmSymlinkPath"
     }
     $settings | Set-Content $nvmSettingsPath
+    Write-Host "[nvm] set symlink path to $nvmSymlinkPath" -ForegroundColor Gray
 }
 
-if (nvm list 2>$null | Select-String "lts") {
-    Write-Host "[node] LTS already installed, skipping." -ForegroundColor Gray
+if (nvm list 2>$null | Select-String "v\d") {
+    Write-Host "[node] already installed, ensuring active version..." -ForegroundColor Gray
+    $activeVersion = nvm list 2>$null | Select-String "\*" | ForEach-Object { ($_ -split "\s+")[1] }
+    if (-not $activeVersion) {
+        $activeVersion = nvm list 2>$null | Select-String "v\d" | ForEach-Object { ($_ -split "\s+")[0] } | Select-Object -First 1
+        nvm use $activeVersion
+    }
 } else {
     Write-Host "[node] Installing LTS..." -ForegroundColor Yellow
     nvm install lts

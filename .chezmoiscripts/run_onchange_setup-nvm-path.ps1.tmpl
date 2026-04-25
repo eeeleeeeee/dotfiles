@@ -1,0 +1,50 @@
+{{- if eq .chezmoi.os "windows" -}}
+# version: 1
+$ErrorActionPreference = "Stop"
+
+Write-Host "=== nvm PATH fix ===" -ForegroundColor Cyan
+
+if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
+    Write-Host "[nvm] not found, skipping." -ForegroundColor Yellow
+    exit 0
+}
+
+$nvmSettingsPath = (Get-Command nvm).Source | Split-Path | Join-Path -ChildPath "settings.txt"
+$nvmRoot = $null
+if (Test-Path $nvmSettingsPath) {
+    $rootLine = Get-Content $nvmSettingsPath | Where-Object { $_ -match "^root:" } | Select-Object -First 1
+    if ($rootLine) { $nvmRoot = ($rootLine -replace "^root:\s*", "").Trim() }
+}
+if (-not $nvmRoot) {
+    Write-Host "[nvm] could not determine root from settings.txt, skipping." -ForegroundColor Yellow
+    exit 0
+}
+
+# The PATH entry scoop adds is: <nvmRoot>\nodejs  — nvm must create a symlink there
+$nvmSymlinkPath = Join-Path $nvmRoot "nodejs"
+
+if (Test-Path $nvmSettingsPath) {
+    $settings = Get-Content $nvmSettingsPath
+    if ($settings -match "^path:") {
+        $settings = $settings -replace "^path:.*", "path: $nvmSymlinkPath"
+    } else {
+        $settings += "path: $nvmSymlinkPath"
+    }
+    $settings | Set-Content $nvmSettingsPath
+    Write-Host "[nvm] settings.txt updated: path -> $nvmSymlinkPath" -ForegroundColor Gray
+}
+
+# Activate an installed version so the symlink is created
+$installed = nvm list 2>$null | Select-String "v\d" | ForEach-Object { ($_.Line.Trim() -split "\s+")[0] } | Select-Object -First 1
+if ($installed) {
+    Write-Host "[nvm] activating $installed ..." -ForegroundColor Yellow
+    nvm use $installed
+    Write-Host "[node] $(node --version)" -ForegroundColor Green
+} else {
+    Write-Host "[nvm] no version installed, installing LTS..." -ForegroundColor Yellow
+    nvm install lts
+    nvm use lts
+}
+
+Write-Host "=== nvm PATH fix complete. ===" -ForegroundColor Cyan
+{{- end -}}
