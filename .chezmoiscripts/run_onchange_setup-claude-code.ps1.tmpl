@@ -46,7 +46,7 @@ if (Test-Path $pluginCache) {
 
     foreach ($file in $hooksFiles) {
         $content = Get-Content $file.FullName -Raw
-        if ($content -match '\$\{CLAUDE_PLUGIN_ROOT\}/' -and $content -notmatch 'cygpath') {
+        if ($content -match '\$\{CLAUDE_PLUGIN_ROOT\}/') {
             $lines  = $content -split "`n"
             $result = @()
             foreach ($line in $lines) {

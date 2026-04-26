@@ -40,8 +40,15 @@ if (Test-Path $settingsPath) {
 }
 
 $merged = ($existing, $patch) | jq -s '.[0] * .[1]'
-if ($LASTEXITCODE -ne 0) {
+if (-not $?) {
     Write-Host "[jq] merge failed." -ForegroundColor Red
+    exit 1
+}
+
+try {
+    $null = ($merged -join "`n") | ConvertFrom-Json -ErrorAction Stop
+} catch {
+    Write-Host "[jq] merge produced invalid JSON, aborting." -ForegroundColor Red
     exit 1
 }
 
