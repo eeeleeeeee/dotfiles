@@ -12,10 +12,17 @@ if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
 # Reset scoop and all buckets to clean state to prevent "Uncommitted changes" errors
 $scoopInstall = "$env:USERPROFILE\scoop\apps\scoop\current"
 if (Test-Path "$scoopInstall\.git") {
-    git -C $scoopInstall reset --hard HEAD --quiet 2>$null
+    Write-Host "[scoop] Resetting scoop to clean state..." -ForegroundColor Gray
+    git -C $scoopInstall reset --hard HEAD --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[scoop] WARNING: Failed to reset scoop, continuing anyway..." -ForegroundColor Yellow
+    }
 }
 Get-ChildItem "$env:USERPROFILE\scoop\buckets" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
-    git -C $_.FullName reset --hard HEAD --quiet 2>$null
+    git -C $_.FullName reset --hard HEAD --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[scoop] WARNING: Failed to reset bucket '$($_.Name)', continuing anyway..." -ForegroundColor Yellow
+    }
 }
 
 function Remove-FontFiles {

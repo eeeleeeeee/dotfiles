@@ -62,7 +62,14 @@ if (Test-Path $pluginCache) {
                 }
             }
             $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-            [System.IO.File]::WriteAllText($file.FullName, ($result -join "`n"), $utf8NoBom)
+            $jsonStr = $result -join "`n"
+            try {
+                $null = $jsonStr | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Write-Host "  ERROR: Invalid JSON generated for $($file.FullName), skipping patch." -ForegroundColor Red
+                continue
+            }
+            [System.IO.File]::WriteAllText($file.FullName, $jsonStr, $utf8NoBom)
             Write-Host "  Patched hooks: $($file.FullName)" -ForegroundColor Gray
         }
     }

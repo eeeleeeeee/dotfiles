@@ -28,5 +28,5 @@ output=$(echo "$input" | jq '
       "args": [{{ if eq .chezmoi.os "windows" }}"/c", "npx", {{ end }}"-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
     }
   })
-' | tr -d '\r')
+' | tr -d '\r') || { echo "ERROR: jq patching failed for ~/.claude.json" >&2; exit 1; }
 printf '%s' "$output"
