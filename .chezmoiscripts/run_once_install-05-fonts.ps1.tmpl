@@ -9,12 +9,34 @@ if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
+# Reset scoop and all buckets to clean state to prevent "Uncommitted changes" errors
+$scoopInstall = "$env:USERPROFILE\scoop\apps\scoop\current"
+if (Test-Path "$scoopInstall\.git") {
+    git -C $scoopInstall reset --hard HEAD --quiet 2>$null
+}
+Get-ChildItem "$env:USERPROFILE\scoop\buckets" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+    git -C $_.FullName reset --hard HEAD --quiet 2>$null
+}
+
+function Remove-FontFiles {
+    param([string]$Pattern)
+    $fontsDir = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+    Get-ChildItem $fontsDir -Filter $Pattern -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            Remove-Item $_.FullName -Force -ErrorAction Stop
+        } catch {
+            Rename-Item $_.FullName -NewName ($_.Name + ".bak") -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Install-ScoopPackage {
-    param([string]$Package)
+    param([string]$Package, [string]$FontPattern)
     if (scoop list $Package 2>$null | Select-String $Package) {
         Write-Host "[$Package] already installed, skipping." -ForegroundColor Gray
     } else {
         Write-Host "[$Package] Installing..." -ForegroundColor Yellow
+        if ($FontPattern) { Remove-FontFiles $FontPattern }
         scoop install $Package
     }
 }
@@ -25,17 +47,17 @@ if ($buckets -notcontains "nerd-fonts") {
 }
 
 # ── CaskaydiaCove Nerd Font Mono ──────────────────────────────────────────
-Install-ScoopPackage "cascadiacode-nf-mono"
+Install-ScoopPackage "cascadiacode-nf-mono" "CaskaydiaCoveNerdFontMono-*.ttf"
 
 # ── JetBrains Mono ────────────────────────────────────────────────────────
-Install-ScoopPackage "jetbrains-mono"
-Install-ScoopPackage "JetBrainsMono-NF"
-Install-ScoopPackage "JetBrainsMono-NF-Mono"
+Install-ScoopPackage "jetbrains-mono" "JetBrainsMono-*.ttf"
+Install-ScoopPackage "JetBrainsMono-NF" "JetBrainsMonoNerdFont-*.ttf"
+Install-ScoopPackage "JetBrainsMono-NF-Mono" "JetBrainsMonoNerdFontMono-*.ttf"
 
 # ── Google Noto ───────────────────────────────────────────────────────────
-Install-ScoopPackage "Noto-NF"
-Install-ScoopPackage "Noto-NF-Mono"
-Install-ScoopPackage "Noto-CJK-Mega-OTC"
+Install-ScoopPackage "Noto-NF" "NotoSansM Nerd Font*.ttf"
+Install-ScoopPackage "Noto-NF-Mono" "NotoSansMNerdFontMono-*.ttf"
+Install-ScoopPackage "Noto-CJK-Mega-OTC" "Noto*.otc"
 
 Write-Host "=== Fonts setup complete. ===" -ForegroundColor Cyan
 {{- end -}}
