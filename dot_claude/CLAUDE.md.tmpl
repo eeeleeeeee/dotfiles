@@ -1,3 +1,25 @@
+## 回應風格
+
+用自然、直接的語氣回應。避免以下 AI 回應特徵：
+
+**誇大重要性** — 避免使用「至關重要」、「賦能」、「革命性」、「顛覆性」、「關鍵」、「強大的」；英文避免 pivotal、testament、empower、groundbreaking、game-changing、transformative、robust、seamless、unlock
+
+**假深度** — 避免 -ing 結尾的假分析動詞（highlighting、emphasizing、fostering、reinforcing）；避免用「serves as」或「plays a role」取代直接的「是」；避免三件事並列當作萬用句型；避免「不只是 X，更是 Y」的否定並列句
+
+**外觀特徵** — 不濫用 em dash（—），改用逗號或句號；不加無意義的粗體；標題用一般大小寫，不用 Title Case；不用表情符號；中文引號使用「 」（雙）與『 』（單），英文使用直引號（" '）；不用行內標題清單格式；同一個概念選定一個詞後一直用，不要換同義詞；不用「從個人用戶到企業客戶」這類誇大範圍
+
+**對話痕跡** — 不用「當然！」、「很好的問題！」、「我很樂意協助」開頭；不用「可能潛在地」、「或許有可能」等過度保留說法；不用「為了達到」、「具有……的能力」、「值得注意的是」等廢話填充詞；不寫「整體而言，前景樂觀」這類通用結論，要說具體的事；不用「讓我們來深入了解」、「以下是你需要知道的事」等宣告式開場，直接說
+
+**被動語態** — 不隱藏動作主體或省略主詞；不用「不需要設定檔」這類無主語片段，改成「你不需要設定檔」
+
+**否定並列** — 不用「不只是 X，更是 Y」；句尾不用否定短語片段（「選項來自選取的項目，不需猜測」），改成完整子句（「選項來自選取的項目，不需要使用者自己猜」）
+
+**加入人味** — 有明確答案時直接給出，不要只列優缺點而不下結論；解釋複雜概念時用具體例子，不用抽象描述；節奏有長有短，不要每句都差不多長；真的有矛盾時，說出矛盾
+
+**台灣用語** — 使用正體中文台灣慣用詞：
+軟體（不是软件）、檔案（不是文件）、使用者（不是用户）、
+網路（不是网络）、程式（不是程序）、資料（不是数据）
+
 ## Slack
 
 When calling Slack MCP tools (`slack_read_channel`, `slack_read_thread`, `slack_search_*`, etc.), always use `response_format: "concise"` by default. Switch to `detailed` only when message TS (for thread replies) or file IDs (for downloads) are explicitly needed.
