@@ -29,10 +29,12 @@ function Remove-FontFiles {
     param([string]$Pattern)
     $fontsDir = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
     Get-ChildItem $fontsDir -Filter $Pattern -ErrorAction SilentlyContinue | ForEach-Object {
+        $filePath = $_.FullName
+        $fileName = $_.Name
         try {
-            Remove-Item $_.FullName -Force -ErrorAction Stop
+            Remove-Item $filePath -Force -ErrorAction Stop
         } catch {
-            Rename-Item $_.FullName -NewName ($_.Name + ".bak") -ErrorAction SilentlyContinue
+            Rename-Item $filePath -NewName ($fileName + ".bak") -ErrorAction SilentlyContinue
         }
     }
 }
@@ -57,14 +59,14 @@ if ($buckets -notcontains "nerd-fonts") {
 Install-ScoopPackage "cascadiacode-nf-mono" "CaskaydiaCoveNerdFontMono-*.ttf"
 
 # ── JetBrains Mono ────────────────────────────────────────────────────────
-Install-ScoopPackage "jetbrains-mono" "JetBrainsMono-*.ttf"
-Install-ScoopPackage "JetBrainsMono-NF" "JetBrainsMonoNerdFont-*.ttf"
+Install-ScoopPackage "jetbrains-mono" "JetBrainsMono*.ttf"
+Install-ScoopPackage "JetBrainsMono-NF" "JetBrainsMono*NerdFont*.ttf"
 Install-ScoopPackage "JetBrainsMono-NF-Mono" "JetBrainsMonoNerdFontMono-*.ttf"
 
 # ── Google Noto ───────────────────────────────────────────────────────────
-Install-ScoopPackage "Noto-NF" "NotoSansM Nerd Font*.ttf"
-Install-ScoopPackage "Noto-NF-Mono" "NotoSansMNerdFontMono-*.ttf"
-Install-ScoopPackage "Noto-CJK-Mega-OTC" "Noto*.otc"
+Install-ScoopPackage "Noto-NF" "Noto*NerdFont-*.ttf"
+Install-ScoopPackage "Noto-NF-Mono" "Noto*NerdFontMono-*.ttf"
+Install-ScoopPackage "Noto-CJK-Mega-OTC" "Noto*CJK*.ttc"
 
 Write-Host "=== Fonts setup complete. ===" -ForegroundColor Cyan
 {{- end -}}
