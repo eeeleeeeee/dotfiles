@@ -1,0 +1,82 @@
+# starship prompt configuration — 模擬 oh-my-zsh "ys" theme：
+#
+#   # user @ host in /full/path on git:branch x [12:26:34]
+#   $
+#
+# 顏色對照（粗略）：username cyan、hostname green、directory yellow、
+# git:prefix red、branch magenta、git status x red、time white。
+# 第一行的 # 跟著 last exit code 換顏色（success 綠、fail 紅）；第二行的
+# $ 不跟（starship 一個 prompt 只能一個 $character 模組，第二行只能是 literal）。
+
+format = """
+$character [$username](bold cyan)[ @ ](white)[$hostname](bold green)[ in ](white)$directory$git_branch$git_status[ \\[$time\\]](white)
+[\\$](bold green) """
+
+add_newline = false
+
+[character]
+success_symbol = "[#](bold green)"
+error_symbol = "[#](bold red)"
+
+[username]
+show_always = true
+style_user = "bold cyan"
+style_root = "bold red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold green"
+format = "[$hostname]($style)"
+
+[directory]
+# ys 顯示完整路徑而非只到 repo root；關掉 starship 的截斷
+truncation_length = 0
+truncate_to_repo = false
+style = "bold yellow"
+format = "[$path]($style)"
+
+[git_branch]
+# ys 原版用 "on" 白 + "git:" 紅；這裡改成 "on git:" 全白，因為紅色在低螢幕
+# 亮度下對比不夠。分支用 Dracula purple #bd93f9，同樣是低亮度仍清楚的選擇。
+#
+# 兩個 starship 細節：
+#   1. starship 認 "purple" 不認 "magenta"（同一個 ANSI 35 但 keyword 不同），
+#      所以走 $style indirection 比較不會踩坑；這裡乾脆寫 truecolor hex。
+#   2. format 開頭多一個空格（"[ on ..."），讓 $directory 跟 $git_branch
+#      之間有自然空白。把空格放這裡而非 $directory 後面，是因為非 git repo
+#      時 $git_branch 整段不 render，這裡多的空格也跟著消失，不會留尾空白。
+symbol = ""
+format = "[ on git:](white)[$branch]($style)"
+style = "bold #bd93f9"
+
+[git_status]
+# 顏色用 Salmon #ffa07a：在低螢幕亮度下比 ANSI 31 (red) / 91 (bright-red)
+# 都更顯眼，帶橘粉調與 branch 的紫互補不撞色。
+#
+# 符號定義（全部明寫，將來改檔不用回 starship docs 查）：
+#   !  modified       tracked 檔案有未 stage 變動
+#   +  staged         變動已 git add、等待 commit
+#   ?  untracked      全新檔、git 還沒追
+#   ✘  deleted        檔案被刪
+#   »  renamed        重新命名
+#   $  stashed        有 git stash 內容
+#   =  conflicted     merge / rebase 衝突中
+#   ⇡  ahead          local 比 origin/<branch> 多 N commit
+#   ⇣  behind         origin/<branch> 比 local 多 N commit
+#   ⇕  diverged       兩邊各有對方沒有的 commit
+#
+# format 的 $all_status 是 conflicted+stashed+deleted+renamed+modified+staged+untracked
+# 這些「工作目錄狀態」字串的 concat；$ahead_behind 是 ahead/behind/diverged
+# 的 concat。同時出現多種狀態時各自符號會疊加（例如 `!?` = 又改又有 untracked）。
+format = '([ $all_status$ahead_behind]($style))'
+style = "bold #ffa07a"
+ahead = "⇡"
+behind = "⇣"
+diverged = "⇕"
+
+[time]
+disabled = false
+format = "$time"
+time_format = "%H:%M:%S"
+style = "white"
