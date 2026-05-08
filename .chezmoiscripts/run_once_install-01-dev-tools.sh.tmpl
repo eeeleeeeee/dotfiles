@@ -1,0 +1,122 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Dev Tools Setup ==="
+
+# ──────────────────────────────────────────────────────────────────────────
+# 重要：本腳本「不」讓 SDKMAN / nvm 自動修改 ~/.bashrc / ~/.zshrc。
+# 原因：rc 檔由 chezmoi 統一管理（dot_bashrc / dot_zshrc），若讓 installer
+# 偷偷 append，下次 chezmoi apply 會把那些行洗掉。
+# Shell 整合請手動加進 dot_bashrc / dot_zshrc：
+#   export SDKMAN_DIR="$HOME/.sdkman"
+#   [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
+#   export NVM_DIR="$HOME/.nvm"
+#   [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+# ──────────────────────────────────────────────────────────────────────────
+
+# ── SDKMAN ────────────────────────────────────────────────────────────────
+export SDKMAN_DIR="$HOME/.sdkman"
+if [ ! -d "$SDKMAN_DIR" ]; then
+    echo "[sdkman] Installing..."
+    curl -fsSL "https://get.sdkman.io?rcupdate=false" | bash
+else
+    echo "[sdkman] already installed, skipping."
+fi
+[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] || {
+    echo "[sdkman] init script missing, aborting." >&2
+    exit 1
+}
+
+# 進入第三方地盤後永久關閉 -u（SDKMAN/nvm 的內部 script 會踩到 unbound
+# variable）；保留 -e 與 -o pipefail 以維持失敗即停的語意。
+set +u
+# shellcheck source=/dev/null
+source "$SDKMAN_DIR/bin/sdkman-init.sh"
+
+# ── Eclipse Temurin JDKs via SDKMAN ───────────────────────────────────────
+# 版本鎖定於已知可用值。要更新時：
+#   sdk list java | grep -i temurin   # 找到目標 major 版本的最新 patch
+# 然後改下面陣列。
+JDK_VERSIONS=(
+    "8.0.452-tem"
+    "11.0.27-tem"
+    "17.0.15-tem"
+    "21.0.7-tem"
+)
+for v in "${JDK_VERSIONS[@]}"; do
+    if [ -d "$SDKMAN_DIR/candidates/java/$v" ]; then
+        echo "[sdkman] java $v already installed, skipping."
+        continue
+    fi
+    echo "[sdkman] Installing java $v..."
+    # 用 here-string 對「設為 default 嗎？」回答 n；default 後面統一指定
+    if ! sdk install java "$v" <<< "n"; then
+        echo "[sdkman] WARNING: java $v unavailable. 跑 'sdk list java | grep tem' 找新版本。" >&2
+    fi
+done
+# 預設使用最新 LTS（21）
+if [ -d "$SDKMAN_DIR/candidates/java/21.0.7-tem" ]; then
+    sdk default java 21.0.7-tem >/dev/null
+fi
+
+# ── Maven via SDKMAN ──────────────────────────────────────────────────────
+if [ -L "$SDKMAN_DIR/candidates/maven/current" ]; then
+    echo "[sdkman] maven already installed, skipping."
+else
+    echo "[sdkman] Installing maven..."
+    sdk install maven <<< "y"
+    # 非 TTY 環境（這裡 stdin 餵 here-string）下 SDKMAN 不會自動建立 current
+    # symlink，要手動指定 default。挑剛裝好的最新版作為 default。
+    latest=$(ls -1 "$SDKMAN_DIR/candidates/maven/" 2>/dev/null | grep -v '^current$' | sort -V | tail -1)
+    [ -n "$latest" ] && sdk default maven "$latest"
+fi
+
+# ── Go via apt ────────────────────────────────────────────────────────────
+# 注意：Ubuntu 倉庫的 golang-go 通常會落後 upstream 一兩版。若要最新，改抓
+#   https://go.dev/dl/ 的 tarball 解到 /usr/local/go。此處保留 apt 作法以
+#   降低複雜度。
+if command -v go >/dev/null 2>&1; then
+    echo "[go] already installed ($(go version)), skipping."
+else
+    echo "[go] Installing via apt..."
+    sudo apt-get install -y golang-go
+fi
+
+# ── nvm + Node LTS ────────────────────────────────────────────────────────
+export NVM_DIR="$HOME/.nvm"
+if [ ! -d "$NVM_DIR" ]; then
+    echo "[nvm] Installing..."
+    # PROFILE=/dev/null 阻止 nvm install.sh 寫入 rc 檔
+    PROFILE=/dev/null bash -c \
+        'curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
+else
+    echo "[nvm] already installed, skipping."
+fi
+[ -s "$NVM_DIR/nvm.sh" ] || {
+    echo "[nvm] nvm.sh missing, aborting." >&2
+    exit 1
+}
+# shellcheck source=/dev/null
+source "$NVM_DIR/nvm.sh"
+
+if nvm ls --no-colors 2>/dev/null | grep -qE 'lts/'; then
+    echo "[node] LTS already installed, skipping."
+else
+    echo "[node] Installing LTS..."
+    nvm install --lts
+fi
+nvm alias default 'lts/*' >/dev/null
+nvm use default >/dev/null
+
+# ── starship ──────────────────────────────────────────────────────────────
+if command -v starship >/dev/null 2>&1; then
+    echo "[starship] already installed, skipping."
+else
+    echo "[starship] Installing to ~/.local/bin..."
+    mkdir -p "$HOME/.local/bin"
+    curl -fsSL https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin" -y
+fi
+
+echo "=== Dev Tools Setup complete. ==="
+{{- end -}}
