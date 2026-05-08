@@ -1,0 +1,59 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Claude Code Setup ==="
+
+if ! command -v claude >/dev/null 2>&1; then
+    echo "[claude] command not found, skipping. Install via: npm install -g @anthropic-ai/claude-code"
+    exit 0
+fi
+
+# ── Plugins ───────────────────────────────────────────────────────────────
+# claude plugin commands 是 idempotent 的（重複 add marketplace / install plugin
+# 不會壞），但若已存在會 exit 非零，所以 `|| true` 包起來
+echo "[plugins] Adding superpowers marketplace..."
+claude plugin marketplace add obra/superpowers-marketplace >/dev/null 2>&1 || true
+
+echo "[plugins] Installing superpowers..."
+claude plugin install superpowers >/dev/null 2>&1 || true
+
+echo "[plugins] Installing slack..."
+claude plugin install slack >/dev/null 2>&1 || true
+
+# ── jdtls (Java LSP) ──────────────────────────────────────────────────────
+# apt 沒有 jdtls，從 Eclipse 官方 snapshot tarball 抓。jdtls 失敗不致命：
+# 跟 Windows 版的 try/catch 同邏輯，記錄錯誤後繼續。
+JDTLS_DIR="$HOME/.local/share/jdtls"
+JDTLS_BIN="$HOME/.local/bin/jdtls"
+JDTLS_URL="https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+
+if [ -x "$JDTLS_BIN" ]; then
+    echo "[jdtls] already installed at $JDTLS_BIN, skipping."
+else
+    echo "[jdtls] Installing latest snapshot..."
+    mkdir -p "$JDTLS_DIR" "$HOME/.local/bin"
+    tmp_tar=$(mktemp --suffix=.tar.gz)
+    set +e
+    curl -fsSL -o "$tmp_tar" "$JDTLS_URL"
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        tar -xzf "$tmp_tar" -C "$JDTLS_DIR"
+        rc=$?
+    fi
+    set -e
+    rm -f "$tmp_tar"
+    if [ $rc -eq 0 ] && [ -x "$JDTLS_DIR/bin/jdtls" ]; then
+        ln -sf "$JDTLS_DIR/bin/jdtls" "$JDTLS_BIN"
+        echo "[jdtls] Installed."
+    else
+        echo "[jdtls] Installation failed (exit $rc), continuing." >&2
+        # 清掉殘渣，下次重跑可以再試
+        rm -rf "$JDTLS_DIR"
+    fi
+fi
+
+# Linux 不需要 cygpath / CRLF / BOM 修正——Windows 版那三段在這沒對應物。
+
+echo "=== Claude Code setup complete. Restart Claude Code to activate. ==="
+{{- end -}}
