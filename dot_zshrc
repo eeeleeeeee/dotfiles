@@ -110,3 +110,14 @@ source $ZSH/oh-my-zsh.sh
 alias vi="nvim"
 alias vim="nvim"
 export PATH="$HOME/.local/bin:$PATH"
+
+# === SDKMAN（由 .chezmoiscripts/run_once_install-01-dev-tools.sh.tmpl 安裝）===
+export SDKMAN_DIR="$HOME/.sdkman"
+[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
+
+# === nvm（同上 install-01）===
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+
+# === starship prompt（同上 install-01）===
+command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"

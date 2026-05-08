@@ -9,9 +9,28 @@
 | `dot_vimrc` | `~/.vimrc` | Linux |
 | `dot_bashrc` | `~/.bashrc` | Linux |
 | `dot_zshrc` | `~/.zshrc` | Linux |
-| `Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1` | `~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1` | Windows |
+| `Documents/PowerShell/Microsoft.PowerShell_profile.ps1` | `~/Documents/PowerShell/...` | Windows |
+| `Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1` | `~/Documents/WindowsPowerShell/...` | Windows |
 | `dot_claude/settings.json` | `~/.claude/settings.json` | 雙平台 |
 | `dot_claude/commands/` | `~/.claude/commands/` | 雙平台 |
+| `.chezmoiexternal.toml` → `.local/bin/statusline[.exe]` | `~/.local/bin/statusline[.exe]` | 雙平台 |
+| `.chezmoiexternal.toml` → `.oh-my-zsh/custom/plugins/*` | `~/.oh-my-zsh/custom/plugins/*` | Linux |
+
+## 自動安裝的工具（透過 `.chezmoiscripts/`）
+
+`chezmoi apply` 會跑下列腳本，依平台分支執行對應指令。WSL 自動跳過 fonts。
+
+| 腳本 | Windows（`.ps1`） | Linux/WSL（`.sh`） |
+|------|------------------|---------------------|
+| `install-prereqs` | jq、dos2unix（透過 scoop） | jq、curl、unzip、zip、ca-certificates、fontconfig（透過 apt） |
+| `install-01-dev-tools` | Temurin 8/11/17/21、Maven、Go、starship、nvm、Node LTS（透過 scoop） | SDKMAN + Temurin 8/11/17/21 + Maven、Go（apt）、nvm + Node LTS、starship |
+| `install-02-npm-tools` | claude、codegraph | claude、codegraph |
+| `install-03-cli-tools` | 7zip、curl、wget、clink、nexttrace、ffmpeg、yt-dlp | p7zip-full、wget、ffmpeg、zsh、yt-dlp（release）、nexttrace（release） |
+| `install-04-shell` | （無） | oh-my-zsh + chsh 改預設 shell |
+| `install-05-fonts` | CaskaydiaCove / JetBrainsMono / Noto Nerd Fonts、Noto CJK | JetBrainsMono / CascadiaCode / Noto Nerd Fonts、Noto CJK（**WSL 自動跳過**） |
+| `setup-claude-code` | 外掛、jdtls、cygpath/CRLF/BOM 修正 | 外掛、jdtls |
+| `setup-nvm-path` | 修 nvm 在 scoop 下的 PATH 問題 | （Linux 不需要） |
+| `sync-windows-terminal` | 同步 Windows Terminal `settings.json` | （N/A） |
 
 ---
 

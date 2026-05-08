@@ -1,3 +1,10 @@
 # Force LF for chezmoi template files to prevent CRLF breaking template parsing
 .chezmoiignore text eol=lf
 *.tmpl text eol=lf
+
+# Force LF for Linux dotfiles — Windows editors otherwise sometimes save them
+# with CRLF on round-trip, which breaks `bash ~/.bashrc` and `zsh ~/.zshrc`
+# after chezmoi deploys them.
+dot_bashrc text eol=lf
+dot_zshrc  text eol=lf
+dot_vimrc  text eol=lf
