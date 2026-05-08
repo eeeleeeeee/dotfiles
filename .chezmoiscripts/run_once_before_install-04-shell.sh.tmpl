@@ -1,0 +1,46 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Shell Setup (oh-my-zsh + chsh) ==="
+
+# zsh 應該由 install-03-cli-tools 裝好
+if ! command -v zsh >/dev/null 2>&1; then
+    echo "[zsh] command not found (expected from install-03). Skipping." >&2
+    exit 0
+fi
+
+# ── oh-my-zsh ─────────────────────────────────────────────────────────────
+# 必須在 chezmoi externals 處理「~/.oh-my-zsh/custom/plugins/*」之前完成，
+# 否則 omz install.sh 會因 ~/.oh-my-zsh 已存在而 bail。所以這個 script
+# 命名為 run_once_before_*。
+if [ -d "$HOME/.oh-my-zsh" ]; then
+    echo "[oh-my-zsh] already installed, skipping."
+else
+    echo "[oh-my-zsh] Installing..."
+    # KEEP_ZSHRC=yes  別碰 ~/.zshrc，那是 chezmoi 管的
+    # RUNZSH=no       裝完別 exec zsh，不然腳本會卡住
+    # CHSH=no         別自動 chsh，下面我們手動處理（含 /etc/shells 檢查）
+    KEEP_ZSHRC=yes RUNZSH=no CHSH=no \
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
+
+# ── chsh：把 login shell 設為 zsh ─────────────────────────────────────────
+zsh_path=$(command -v zsh)
+current_shell=$(getent passwd "$USER" | awk -F: '{print $7}')
+if [ "$current_shell" = "$zsh_path" ]; then
+    echo "[chsh] login shell already $zsh_path, skipping."
+else
+    echo "[chsh] Changing login shell from $current_shell to $zsh_path..."
+    # chsh 只接受 /etc/shells 列出的 shell；少數 distro 安裝 zsh 時不會自動
+    # 把 /usr/bin/zsh 寫進去，所以先確保它在
+    if ! grep -qx "$zsh_path" /etc/shells; then
+        echo "[chsh] $zsh_path not in /etc/shells, appending..."
+        echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
+    fi
+    # 用 sudo chsh 避免互動式密碼輸入
+    sudo chsh -s "$zsh_path" "$USER"
+fi
+
+echo "=== Shell setup complete. ==="
+{{- end -}}

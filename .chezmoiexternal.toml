@@ -9,3 +9,17 @@
     executable = true
     url = "https://github.com/eeeleeeeee/dotfiles/releases/download/statusline-latest/statusline-{{ .chezmoi.os }}-{{ .chezmoi.arch }}{{ $ext }}"
     refreshPeriod = "1h"
+
+# zsh plugins — Linux 才需要（Windows 沒裝 zsh）
+# 依賴 run_once_before_install-04-shell.sh.tmpl 已經建立 ~/.oh-my-zsh 目錄
+{{ if ne .chezmoi.os "windows" -}}
+[".oh-my-zsh/custom/plugins/zsh-autosuggestions"]
+    type = "git-repo"
+    url = "https://github.com/zsh-users/zsh-autosuggestions.git"
+    refreshPeriod = "168h"
+
+[".oh-my-zsh/custom/plugins/zsh-syntax-highlighting"]
+    type = "git-repo"
+    url = "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+    refreshPeriod = "168h"
+{{- end }}
