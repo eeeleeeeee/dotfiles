@@ -1,0 +1,50 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== npm Global Tools Setup ==="
+
+# 依賴 install-01 裝好的 nvm。Linux 上 nvm 的 node/npm 不在預設 PATH，
+# 要先 source nvm.sh，它會自動啟動 default 版本（lts/*）。
+export NVM_DIR="$HOME/.nvm"
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    echo "[npm] nvm not installed yet (expected from install-01). Skipping." >&2
+    exit 0
+fi
+set +u
+# shellcheck source=/dev/null
+source "$NVM_DIR/nvm.sh"
+
+if ! command -v npm >/dev/null 2>&1; then
+    echo "[npm] command not found after sourcing nvm. Skipping." >&2
+    exit 0
+fi
+
+is_installed_locally() {
+    # 找到 PATH 上的命令；若位於 /mnt/* 視為「Windows mount 滲透」，不算 Linux 側安裝。
+    local path
+    path=$(command -v "$1" 2>/dev/null) || return 1
+    case "$path" in
+        /mnt/*) return 1 ;;
+        *)      return 0 ;;
+    esac
+}
+
+install_npm_tool() {
+    local cmd="$1" pkg="$2"
+    if is_installed_locally "$cmd"; then
+        echo "[$cmd] already installed, skipping."
+    else
+        echo "[$cmd] Installing $pkg..."
+        npm install -g "$pkg"
+    fi
+}
+
+# ── Claude Code ───────────────────────────────────────────────────────────
+install_npm_tool claude @anthropic-ai/claude-code
+
+# ── codegraph (semantic code graph MCP) ──────────────────────────────────
+install_npm_tool codegraph @colbymchenry/codegraph
+
+echo "=== npm global tools setup complete. ==="
+{{- end -}}
