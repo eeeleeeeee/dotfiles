@@ -72,5 +72,39 @@ else
     fi
 fi
 
+# gh (GitHub CLI) — apt jammy 的 gh 落後，且 GitHub 官方推薦走 apt repo 但
+# 那要多 4 行 GPG 設定。這裡走 release tarball、與 nvim/jdtls 同 pattern。
+GH_DIR="$HOME/.local/share/gh"
+if [ -x "$BIN_DIR/gh" ] && [ -x "$GH_DIR/bin/gh" ]; then
+    echo "[gh] already installed ($("$BIN_DIR/gh" --version | head -1)), skipping."
+else
+    echo "[gh] Installing latest release..."
+    arch=$(uname -m)
+    case "$arch" in
+        x86_64)  gh_arch="amd64" ;;
+        aarch64) gh_arch="arm64" ;;
+        *)       gh_arch="" ;;
+    esac
+    if [ -z "$gh_arch" ]; then
+        echo "[gh] unsupported arch '$arch', skipping." >&2
+    else
+        gh_tag=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name')
+        gh_ver=${gh_tag#v}  # 'v2.65.0' → '2.65.0'
+        if [ -z "$gh_ver" ] || [ "$gh_ver" = "null" ]; then
+            echo "[gh] could not resolve latest tag, skipping." >&2
+        else
+            tmp_tar=$(mktemp --suffix=.tar.gz)
+            curl -fsSL -o "$tmp_tar" \
+                "https://github.com/cli/cli/releases/download/${gh_tag}/gh_${gh_ver}_linux_${gh_arch}.tar.gz"
+            mkdir -p "$GH_DIR"
+            # tarball 內層目錄叫 gh_X.Y.Z_linux_amd64/，--strip-components=1 直接攤平
+            tar -xzf "$tmp_tar" -C "$GH_DIR" --strip-components=1
+            rm -f "$tmp_tar"
+            ln -sf "$GH_DIR/bin/gh" "$BIN_DIR/gh"
+            echo "[gh] Installed: $("$BIN_DIR/gh" --version | head -1)"
+        fi
+    fi
+fi
+
 echo "=== CLI tools setup complete. ==="
 {{- end -}}
