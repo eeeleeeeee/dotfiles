@@ -14,3 +14,7 @@ bin
 # Never deploy repo meta files
 README.md
 docs/**
+# `claude/` 是 statusline 的 Go source（CI 編譯成 ~/.local/bin/statusline）
+claude/**
+# `.claude-plugin/` 是 Claude Code plugin marketplace 的 manifest，repo 自身要用
+.claude-plugin/**
