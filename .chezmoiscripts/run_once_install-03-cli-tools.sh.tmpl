@@ -1,0 +1,76 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== CLI Tools Setup ==="
+
+# ── apt packages ──────────────────────────────────────────────────────────
+# Windows scoop 對照：
+#   7zip       → p7zip-full（提供 7z 命令）
+#   curl       → 已在 prereqs.sh.tmpl 裝好，這裡跳過
+#   wget       → wget
+#   clink      → 跳過（Windows readline 替代品；Linux 本來就有）
+#   ffmpeg     → ffmpeg
+# 額外 Linux 加碼：
+#   zsh        → 給 install-04-shell 用，oh-my-zsh 跟 chsh 依賴它
+APT_PACKAGES=(p7zip-full wget ffmpeg zsh)
+
+missing=()
+for pkg in "${APT_PACKAGES[@]}"; do
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "[$pkg] already installed, skipping."
+    else
+        missing+=("$pkg")
+    fi
+done
+
+if (( ${#missing[@]} > 0 )); then
+    echo "[apt] Installing: ${missing[*]}"
+    sudo apt-get update -qq
+    sudo apt-get install -y "${missing[@]}"
+fi
+
+# ── ~/.local/bin 二進位 ──────────────────────────────────────────────────
+BIN_DIR="$HOME/.local/bin"
+mkdir -p "$BIN_DIR"
+
+# yt-dlp — apt 版本通常落後一年以上、會跟著 YouTube API 失效。改用官方
+# release 的單檔 Python 二進位，更新頻率高。
+if [ -x "$BIN_DIR/yt-dlp" ]; then
+    echo "[yt-dlp] already installed at $BIN_DIR/yt-dlp, skipping."
+else
+    echo "[yt-dlp] Installing latest release..."
+    curl -fsSL -o "$BIN_DIR/yt-dlp" \
+        https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
+    chmod +x "$BIN_DIR/yt-dlp"
+fi
+
+# nexttrace — apt 沒有，抓 GitHub release 對應 arch 的二進位
+if [ -x "$BIN_DIR/nexttrace" ]; then
+    echo "[nexttrace] already installed at $BIN_DIR/nexttrace, skipping."
+else
+    arch=$(uname -m)
+    case "$arch" in
+        x86_64)  nt_arch="amd64" ;;
+        aarch64) nt_arch="arm64" ;;
+        *)       nt_arch="" ;;
+    esac
+    if [ -z "$nt_arch" ]; then
+        echo "[nexttrace] unsupported arch '$arch', skipping." >&2
+    else
+        echo "[nexttrace] Installing latest release for $nt_arch..."
+        # 透過 GitHub API 取最新 tag（匿名呼叫 60/hr/IP，正常使用足夠）
+        nt_tag=$(curl -fsSL https://api.github.com/repos/nxtrace/NTrace-core/releases/latest \
+                 | jq -r '.tag_name')
+        if [ -z "$nt_tag" ] || [ "$nt_tag" = "null" ]; then
+            echo "[nexttrace] could not resolve latest tag (rate limit?), skipping." >&2
+        else
+            curl -fsSL -o "$BIN_DIR/nexttrace" \
+                "https://github.com/nxtrace/NTrace-core/releases/download/${nt_tag}/nexttrace_linux_${nt_arch}"
+            chmod +x "$BIN_DIR/nexttrace"
+        fi
+    fi
+fi
+
+echo "=== CLI tools setup complete. ==="
+{{- end -}}
