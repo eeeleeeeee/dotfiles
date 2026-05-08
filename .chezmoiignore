@@ -3,6 +3,7 @@
 .bashrc
 .zshrc
 .claude/settings.linux.json
+.config/nvim/**
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}

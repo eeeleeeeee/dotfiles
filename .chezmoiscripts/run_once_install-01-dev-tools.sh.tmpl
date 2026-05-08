@@ -118,5 +118,37 @@ else
     curl -fsSL https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin" -y
 fi
 
+# ── Neovim（給 LazyVim 用）─────────────────────────────────────────────────
+# apt jammy 的 neovim 是 0.6.x、太舊跑不動 LazyVim（要 ≥ 0.9）。改抓 GitHub
+# release 的 latest tarball；解到 ~/.local/share/nvim-linux-x86_64/，symlink
+# 出 ~/.local/bin/nvim。注意：runtime/plugin 目錄是 ~/.local/share/nvim/
+# （不一樣的名字），不會跟 tarball 解壓的 nvim-linux-x86_64/ 撞名。
+NVIM_BIN="$HOME/.local/bin/nvim"
+NVIM_DIR="$HOME/.local/share/nvim-linux-x86_64"
+
+if [ -x "$NVIM_BIN" ] && [ -x "$NVIM_DIR/bin/nvim" ]; then
+    echo "[nvim] already installed ($("$NVIM_BIN" --version | head -1)), skipping."
+else
+    echo "[nvim] Installing latest release..."
+    tmp_tar=$(mktemp --suffix=.tar.gz)
+    set +e
+    curl -fsSL -o "$tmp_tar" \
+        https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        rm -rf "$NVIM_DIR"
+        tar -xzf "$tmp_tar" -C "$HOME/.local/share/"
+        rc=$?
+    fi
+    set -e
+    rm -f "$tmp_tar"
+    if [ $rc -eq 0 ] && [ -x "$NVIM_DIR/bin/nvim" ]; then
+        ln -sf "$NVIM_DIR/bin/nvim" "$NVIM_BIN"
+        echo "[nvim] Installed: $("$NVIM_BIN" --version | head -1)"
+    else
+        echo "[nvim] Installation failed (exit $rc), continuing." >&2
+    fi
+fi
+
 echo "=== Dev Tools Setup complete. ==="
 {{- end -}}
