@@ -4,24 +4,32 @@ set -euo pipefail
 
 echo "=== Prerequisites Setup ==="
 
-install_package() {
-    local pkg="$1"
-    if command -v apt-get &>/dev/null; then
-        sudo apt-get install -y "$pkg"
-    elif command -v brew &>/dev/null; then
-        brew install "$pkg"
-    elif command -v dnf &>/dev/null; then
-        sudo dnf install -y "$pkg"
-    else
-        echo "WARNING: Cannot install $pkg automatically. Install it manually." >&2
-    fi
-}
+# 後續腳本會依賴這些套件：
+#   jq              modify_*.json.sh.tmpl 用來 patch Claude Code 設定檔
+#   curl            SDKMAN / nvm / starship / nexttrace 安裝腳本都靠它
+#   unzip / zip     SDKMAN 解壓縮 candidate
+#   ca-certificates HTTPS 信任憑證鏈
+#   fontconfig      install-05-fonts 跑 fc-cache（WSL 會略過，但工具先備好）
+PACKAGES=(jq curl unzip zip ca-certificates fontconfig)
 
-if ! command -v jq &>/dev/null; then
-    echo "[jq] Installing..."
-    install_package jq
-else
-    echo "[jq] already installed, skipping."
+if ! command -v apt-get >/dev/null 2>&1; then
+    echo "ERROR: apt-get not found. This setup targets Ubuntu/Debian (incl. WSL)." >&2
+    exit 1
+fi
+
+missing=()
+for pkg in "${PACKAGES[@]}"; do
+    if dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "[$pkg] already installed, skipping."
+    else
+        missing+=("$pkg")
+    fi
+done
+
+if (( ${#missing[@]} > 0 )); then
+    echo "[apt] Installing: ${missing[*]}"
+    sudo apt-get update -qq
+    sudo apt-get install -y "${missing[@]}"
 fi
 
 echo "=== Prerequisites setup complete. ==="
