@@ -16,4 +16,10 @@ sourceDir = {{ .chezmoi.sourceDir | quote }}
 # 前提：git 透過 scoop 安裝
 [interpreters.sh]
     command = {{ joinPath .chezmoi.homeDir "scoop/apps/git/current/bin/bash.exe" | quote }}
+{{- else }}
+# Linux/macOS：必須明確定義 [interpreters.sh]，否則 chezmoi 不會把
+# modify_X.sh.tmpl 的 .sh 副檔名從 target 名稱剝掉，導致 modify 腳本被當成
+# 普通檔部署成 ~/X.sh，而不是去 patch ~/X 的內容。
+[interpreters.sh]
+    command = "bash"
 {{- end }}
