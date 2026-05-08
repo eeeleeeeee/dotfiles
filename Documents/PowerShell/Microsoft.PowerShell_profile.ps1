@@ -6,3 +6,5 @@ Remove-Item Alias:wget -ErrorAction SilentlyContinue
 
 # Force curl to use Scoop version since System32\curl.exe takes PATH precedence
 Set-Alias curl "$env:USERPROFILE\scoop\shims\curl.exe"
+
+Set-Alias cla claude

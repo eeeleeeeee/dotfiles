@@ -86,11 +86,8 @@ source $ZSH/oh-my-zsh.sh
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='nvim'
-# fi
+export EDITOR='nvim'
+export VISUAL='nvim'
 
 # Compilation flags
 # export ARCHFLAGS="-arch $(uname -m)"
@@ -109,6 +106,7 @@ source $ZSH/oh-my-zsh.sh
 
 alias vi="nvim"
 alias vim="nvim"
+alias cla="claude"
 export PATH="$HOME/.local/bin:$PATH"
 
 # === SDKMAN（由 .chezmoiscripts/run_once_install-01-dev-tools.sh.tmpl 安裝）===
