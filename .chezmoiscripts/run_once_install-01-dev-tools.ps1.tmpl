@@ -64,8 +64,22 @@ if (Test-Path $nvmSettingsPath) {
     } else {
         $settings += "path: $nvmSymlinkPath"
     }
-    $settings | Set-Content $nvmSettingsPath
-    Write-Host "[nvm] set symlink path to $nvmSymlinkPath" -ForegroundColor Gray
+    try {
+        $settings | Set-Content $nvmSettingsPath -ErrorAction Stop
+        Write-Host "[nvm] set symlink path to $nvmSymlinkPath" -ForegroundColor Gray
+    } catch [System.UnauthorizedAccessException] {
+        Write-Host "[nvm] settings.txt requires elevation, prompting UAC..." -ForegroundColor Yellow
+        $tempFile = [System.IO.Path]::GetTempFileName()
+        $settings | Set-Content $tempFile
+        $escapedDest = $nvmSettingsPath -replace "'", "''"
+        $escapedSrc  = $tempFile -replace "'", "''"
+        $elevateCmd  = "Copy-Item -LiteralPath '$escapedSrc' -Destination '$escapedDest' -Force"
+        Start-Process -FilePath "powershell.exe" -Verb RunAs -Wait -ArgumentList @(
+            "-NoProfile", "-NonInteractive", "-Command", $elevateCmd
+        )
+        Remove-Item $tempFile -ErrorAction SilentlyContinue
+        Write-Host "[nvm] set symlink path to $nvmSymlinkPath (elevated)" -ForegroundColor Gray
+    }
 }
 
 if (nvm list 2>$null | Select-String "v\d") {
