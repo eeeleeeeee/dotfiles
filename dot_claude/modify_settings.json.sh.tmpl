@@ -24,6 +24,7 @@ echo "$input" | jq \
     .autoUpdatesChannel = "latest"
     | .tui = "fullscreen"
     | .effortLevel = "medium"
+    | .attribution = { commit: "", pr: "" }
     | .statusLine = {
         type: "command",
         command: $statusline_cmd,
